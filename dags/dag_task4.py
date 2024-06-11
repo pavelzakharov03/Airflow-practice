@@ -1,32 +1,32 @@
 from airflow.decorators import dag, task
 from airflow import DAG
+from airflow.models import BaseOperator
 from airflow.operators.email import EmailOperator
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from airflow.utils.dates import days_ago
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 
-class PrintOperator(PythonOperator):
-    def __init__(self, message, **kwargs):
+class HelloOperator(BaseOperator):
+    def __init__(self, name: str, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.message = message
+        self.name = name
 
     def execute(self, context):
-        print(self.message)
-        return self.message
+        message = f"Hello {self.name}"
+        print(message)
+        return message
 
 
-# Функция, которую мы хотим выполнить
 def my_python_function():
     print('Python operator')
 
 
-@dag(owner='airflow',
-     depends_on_past=False,
-     retries=1,
-     retry_delay=timedelta(minutes=5))
-def et1():
+@dag(start_date=datetime(2022, 11, 1),
+     schedule="@daily",
+     catchup=False)
+def etl4():
     send_email = EmailOperator(
         task_id='send_email',
         to='email@example.com',
@@ -43,6 +43,9 @@ def et1():
         task_id='run_python',
         python_callable=my_python_function
     )
-    print_op = PrintOperator(message="my message")
+    print_op = HelloOperator(task_id='hello_message', name="Operator")
 
     run_bash_task >> send_email >> run_python_task >> print_op
+
+
+dag4 = etl4()

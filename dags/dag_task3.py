@@ -4,10 +4,7 @@ from airflow.operators.email import EmailOperator
 from airflow.operators.python import PythonOperator
 from airflow.operators.bash import BashOperator
 from airflow.utils.dates import days_ago
-from datetime import timedelta
-
-
-
+from datetime import timedelta, datetime
 
 
 # Функция, которую мы хотим выполнить
@@ -15,11 +12,10 @@ def my_python_function():
     print('Python operator')
 
 
-@dag(owner='airflow',
-     depends_on_past=False,
-     retries=1,
-     retry_delay=timedelta(minutes=5))
-def et1():
+@dag(start_date=datetime(2022, 11, 1),
+     schedule="@daily",
+     catchup=False)
+def etl3():
     send_email = EmailOperator(
         task_id='send_email',
         to='email@example.com',
@@ -38,3 +34,6 @@ def et1():
     )
 
     run_bash_task >> send_email >> run_python_task
+
+
+dag3 = etl3()
